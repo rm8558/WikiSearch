@@ -5,6 +5,7 @@ import android.content.Context;
 import android.net.Uri;
 import android.support.annotation.NonNull;
 import android.support.v7.widget.RecyclerView;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -31,6 +32,11 @@ public class SearchItemAdapter extends RecyclerView.Adapter<SearchItemAdapter.Se
                              Context context) {
         this.pageList = pageList;
         this.context = context;
+    }
+
+    public void updatePages(ArrayList<Page> pageList){
+        this.pageList=pageList;
+        notifyDataSetChanged();
     }
 
     @NonNull
@@ -69,13 +75,15 @@ public class SearchItemAdapter extends RecyclerView.Adapter<SearchItemAdapter.Se
         }
 
         public void bindView(Page page){
-            tvSearchTitle.setText("Stan Smith");
-            tvSearchDescription.setText("The American Dad");
+            tvSearchTitle.setText(page.getTitle());
+            tvSearchDescription.setText(page.getDescription());
 
             try {
-                Glide.with(context)
-                        .load(Uri.parse("https://a1cf74336522e87f135f-2f21ace9a6cf0052456644b80fa06d4f.ssl.cf2.rackcdn.com/images/characters/p-American-Dad-Stan.jpg"))
-                        .into(ivSearchThumbnail);
+                if(!TextUtils.isEmpty(page.getThumbnailURL())) {
+                    Glide.with(context)
+                            .load(Uri.parse(page.getThumbnailURL()))
+                            .into(ivSearchThumbnail);
+                }
             }catch (Exception e){
                 LogTracker.trackException(SearchItemAdapter.class,e);
             }

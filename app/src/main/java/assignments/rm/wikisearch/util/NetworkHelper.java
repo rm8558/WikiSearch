@@ -4,6 +4,9 @@ import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
@@ -49,8 +52,7 @@ public class NetworkHelper {
         return online;
     }
 
-    public void callApiGet(String url,
-                           String requestBody,
+    public static void callApiGet(String url,
                            final HttpGetCallback callback){
         OkHttpClient client=new OkHttpClient.Builder()
                 .connectTimeout(Constants.CONNECT_TIMEOUT,TimeUnit.SECONDS)
@@ -60,7 +62,6 @@ public class NetworkHelper {
 
         Request request=new Request.Builder()
                 .url(url)
-                .method("GET", RequestBody.create(MediaType.parse("application/json"),requestBody))
                 .build();
 
         Call call=client.newCall(request);
@@ -73,7 +74,22 @@ public class NetworkHelper {
 
             @Override
             public void onResponse(Call call, Response response) throws IOException {
-                callback.handleSuccess(null);
+                String respStr=response.body().string();
+                if(response.isSuccessful()) {
+                    try{
+                        JSONObject respObj=new JSONObject(respStr);
+                        callback.handleSuccess(respObj);
+                    }catch(JSONException jsonX){
+                        LogTracker.trackException(NetworkHelper.class, jsonX);
+                        callback.handleFailure(null);
+                    }catch (Exception e){
+                        LogTracker.trackException(NetworkHelper.class, e);
+                        callback.handleFailure(null);
+                    }
+                }
+                else{
+                    callback.handleFailure(null);
+                }
             }
         });
     }
