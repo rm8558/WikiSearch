@@ -1,5 +1,6 @@
 package assignments.rm.wikisearch.ui.activity;
 
+import android.content.Intent;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -15,7 +16,9 @@ import java.util.List;
 
 import assignments.rm.wikisearch.R;
 import assignments.rm.wikisearch.SearchResultModel;
+import assignments.rm.wikisearch.constant.WikiConstants;
 import assignments.rm.wikisearch.db.DatabaseHelper;
+import assignments.rm.wikisearch.listener.CardClickListener;
 import assignments.rm.wikisearch.model.Page;
 import assignments.rm.wikisearch.model.SearchQuery;
 import assignments.rm.wikisearch.ui.adapter.SearchItemAdapter;
@@ -202,7 +205,17 @@ public class MainActivity extends AppCompatActivity {
         ArrayList<Page> pageList=new ArrayList<Page>();
 
         if(adapter==null){
-            adapter=new SearchItemAdapter(pageList, this);
+            adapter=new SearchItemAdapter(pageList, this, new CardClickListener() {
+                @Override
+                public void onClick(long pageId, String title) {
+                    if(pageId!=-1) {
+                        Intent webIntent = new Intent(MainActivity.this, WebViewActivity.class);
+                        webIntent.putExtra(WikiConstants.INTENT_WIKI_URL, WikiConstants.BASE_WIKI_URL + pageId);
+                        webIntent.putExtra(WikiConstants.INTENT_WIKI_TITLE, title);
+                        startActivity(webIntent);
+                    }
+                }
+            });
         }
 
         rvWikiSearch.setAdapter(adapter);
