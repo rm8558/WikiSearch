@@ -5,17 +5,19 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.widget.Button;
 import android.widget.Toast;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import assignments.rm.wikisearch.R;
 import assignments.rm.wikisearch.SearchResultModel;
+import assignments.rm.wikisearch.db.DatabaseHelper;
 import assignments.rm.wikisearch.model.Page;
+import assignments.rm.wikisearch.model.SearchQuery;
 import assignments.rm.wikisearch.ui.adapter.SearchItemAdapter;
 import assignments.rm.wikisearch.util.LogTracker;
 import assignments.rm.wikisearch.util.NetworkHelper;
@@ -34,6 +36,7 @@ public class MainActivity extends AppCompatActivity {
     NetworkHelper.HttpGetCallback getCallback;
 
     private SearchResultModel searchResultModel;
+    private String searchCriteria;
 
 
     @Override
@@ -42,6 +45,7 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         ButterKnife.bind(this);
+        searchCriteria="sachin t";
 
         if(NetworkHelper.isOnline(this)){
             Toast.makeText(this,"Online",Toast.LENGTH_SHORT).show();
@@ -57,107 +61,128 @@ public class MainActivity extends AppCompatActivity {
         getCallback=new NetworkHelper.HttpGetCallback() {
             @Override
             public void handleSuccess(final Object object) {
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        if(object!=null
-                                && object instanceof JSONObject){
-                            try {
-                                searchResultModel=new SearchResultModel();
-                                ArrayList<Page> pageList=new ArrayList<Page>();
-                                searchResultModel.setPageList(pageList);
+                SearchQuery searchQuery=new SearchQuery();
+                searchQuery.setQuery(searchCriteria);
+                long queryId=-1;
 
-                                JSONObject response = (JSONObject) object;
-                                if(response.has("query")
-                                        && !response.isNull("query")){
-                                    JSONObject queryObj=response.getJSONObject("query");
-                                    if (queryObj.has("pages")
-                                            && !queryObj.isNull("pages")) {
-                                        JSONArray pagesArray=queryObj.getJSONArray("pages");
-                                        for(int i=0;i<pagesArray.length();i++){
-                                            JSONObject pagesObj=pagesArray.getJSONObject(i);
-                                            Page page=new Page();
-                                            if(pagesObj!=null
-                                                    && pagesObj.has("pageid")
-                                                    && !pagesObj.isNull("pageid")) {
-                                                page.setPageId(pagesObj.getLong("pageid"));
-                                            }
+                try{
+                    queryId=DatabaseHelper.getInstance(getApplicationContext())
+                            .getDb()
+                            .searchQueryDAO()
+                            .insertOne(searchQuery);
+                }catch (Exception e){
 
-                                            if(pagesObj!=null
-                                                    && pagesObj.has("ns")
-                                                    && !pagesObj.isNull("ns")) {
-                                                page.setNs(pagesObj.getInt("ns"));
-                                            }
+                }
 
-                                            if(pagesObj!=null
-                                                    && pagesObj.has("title")
-                                                    && !pagesObj.isNull("title")) {
-                                                page.setTitle(pagesObj.getString("title"));
-                                            }
+                if(object!=null
+                        && object instanceof JSONObject){
+                    try {
+                        searchResultModel=new SearchResultModel();
+                        ArrayList<Page> pageList=new ArrayList<Page>();
+                        searchResultModel.setPageList(pageList);
 
-                                            if(pagesObj!=null
-                                                    && pagesObj.has("index")
-                                                    && !pagesObj.isNull("index")) {
-                                                page.setIndex(pagesObj.getLong("index"));
-                                            }
+                        JSONObject response = (JSONObject) object;
+                        if(response.has("query")
+                                && !response.isNull("query")){
+                            JSONObject queryObj=response.getJSONObject("query");
+                            if (queryObj.has("pages")
+                                    && !queryObj.isNull("pages")) {
+                                JSONArray pagesArray=queryObj.getJSONArray("pages");
+                                for(int i=0;i<pagesArray.length();i++){
+                                    JSONObject pagesObj=pagesArray.getJSONObject(i);
+                                    Page page=new Page();
+                                    if(pagesObj!=null
+                                            && pagesObj.has("pageid")
+                                            && !pagesObj.isNull("pageid")) {
+                                        page.setPageId(pagesObj.getLong("pageid"));
+                                    }
 
-                                            if(pagesObj!=null
-                                                    && pagesObj.has("thumbnail")
-                                                    && !pagesObj.isNull("thumbnail")) {
-                                                JSONObject thumbnailJSON=pagesObj.getJSONObject("thumbnail");
+                                    if(pagesObj!=null
+                                            && pagesObj.has("ns")
+                                            && !pagesObj.isNull("ns")) {
+                                        page.setNs(pagesObj.getInt("ns"));
+                                    }
 
-                                                if(thumbnailJSON!=null
-                                                        && thumbnailJSON.has("source")
-                                                        && !thumbnailJSON.isNull("source")) {
-                                                    page.setThumbnailURL(thumbnailJSON.getString("source"));
-                                                }
+                                    if(pagesObj!=null
+                                            && pagesObj.has("title")
+                                            && !pagesObj.isNull("title")) {
+                                        page.setTitle(pagesObj.getString("title"));
+                                    }
 
-                                                if(thumbnailJSON!=null
-                                                        && thumbnailJSON.has("width")
-                                                        && !thumbnailJSON.isNull("width")) {
-                                                    page.setThumbnailWidth(thumbnailJSON.getInt("width"));
-                                                }
+                                    if(pagesObj!=null
+                                            && pagesObj.has("index")
+                                            && !pagesObj.isNull("index")) {
+                                        page.setIndex(pagesObj.getLong("index"));
+                                    }
 
-                                                if(thumbnailJSON!=null
-                                                        && thumbnailJSON.has("height")
-                                                        && !thumbnailJSON.isNull("height")) {
-                                                    page.setThumbnailHeight(thumbnailJSON.getInt("height"));
-                                                }
-                                            }
+                                    if(pagesObj!=null
+                                            && pagesObj.has("thumbnail")
+                                            && !pagesObj.isNull("thumbnail")) {
+                                        JSONObject thumbnailJSON=pagesObj.getJSONObject("thumbnail");
 
-                                            if(pagesObj!=null
-                                                    && pagesObj.has("terms")
-                                                    && !pagesObj.isNull("terms")) {
-                                                JSONObject termsObj=pagesObj.getJSONObject("terms");
-                                                if(termsObj!=null
-                                                        && termsObj.has("description")
-                                                        && !termsObj.isNull("description")){
-                                                    JSONArray descriptionArray=termsObj.getJSONArray("description");
-                                                    StringBuilder descriptionBuffer=new StringBuilder("");
-                                                    for(int j=0;j<descriptionArray.length();j++){
-                                                        descriptionBuffer.append(descriptionArray.getString(j));
-                                                        if(j<descriptionArray.length()-1){
-                                                            descriptionBuffer.append(",");
-                                                        }
-                                                    }
-                                                    page.setDescription(descriptionBuffer.toString());
-                                                }
-                                            }
+                                        if(thumbnailJSON!=null
+                                                && thumbnailJSON.has("source")
+                                                && !thumbnailJSON.isNull("source")) {
+                                            page.setThumbnailURL(thumbnailJSON.getString("source"));
+                                        }
 
-                                            pageList.add(page);
+                                        if(thumbnailJSON!=null
+                                                && thumbnailJSON.has("width")
+                                                && !thumbnailJSON.isNull("width")) {
+                                            page.setThumbnailWidth(thumbnailJSON.getInt("width"));
+                                        }
 
-                                            if(adapter!=null){
-                                                adapter.updatePages(pageList);
-                                            }
+                                        if(thumbnailJSON!=null
+                                                && thumbnailJSON.has("height")
+                                                && !thumbnailJSON.isNull("height")) {
+                                            page.setThumbnailHeight(thumbnailJSON.getInt("height"));
                                         }
                                     }
+
+                                    if(pagesObj!=null
+                                            && pagesObj.has("terms")
+                                            && !pagesObj.isNull("terms")) {
+                                        JSONObject termsObj=pagesObj.getJSONObject("terms");
+                                        if(termsObj!=null
+                                                && termsObj.has("description")
+                                                && !termsObj.isNull("description")){
+                                            JSONArray descriptionArray=termsObj.getJSONArray("description");
+                                            StringBuilder descriptionBuffer=new StringBuilder("");
+                                            for(int j=0;j<descriptionArray.length();j++){
+                                                descriptionBuffer.append(descriptionArray.getString(j));
+                                                if(j<descriptionArray.length()-1){
+                                                    descriptionBuffer.append(",");
+                                                }
+                                            }
+                                            page.setDescription(descriptionBuffer.toString());
+                                        }
+                                    }
+
+                                    page.setQueryId(queryId);
+                                    pageList.add(page);
+                                    if(queryId!=-1) {
+                                        DatabaseHelper
+                                                .getInstance(getApplicationContext())
+                                                .getDb()
+                                                .pageDAO()
+                                                .insertAll(page);
+                                    }
+
+                                    runOnUiThread(new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            if(adapter!=null){
+                                                adapter.updatePages(searchResultModel.getPageList());
+                                            }
+                                        }
+                                    });
                                 }
-                            }catch (Exception e){
-                                LogTracker.trackException(MainActivity.class,e);
                             }
                         }
+                    }catch (Exception e){
+                        LogTracker.trackException(MainActivity.class,e);
                     }
-                });
+                }
             }
 
             @Override
@@ -190,8 +215,27 @@ public class MainActivity extends AppCompatActivity {
         srlWikiSearch.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
             public void onRefresh() {
-                NetworkHelper.callApiGet("https://en.wikipedia.org//w/api.php?action=query&format=json&prop=pageimages%7Cpageterms&generator=prefixsearch&redirects=1&formatversion=2&piprop=thumbnail&pithumbsize=50&pilimit=10&wbptterms=description&gpssearch=Sachin+T&gpslimit=10",
-                        getCallback);
+                if(NetworkHelper.isOnline(MainActivity.this)) {
+                    NetworkHelper.callApiGet("https://en.wikipedia.org//w/api.php?action=query&format=json&prop=pageimages%7Cpageterms&generator=prefixsearch&redirects=1&formatversion=2&piprop=thumbnail&pithumbsize=50&pilimit=10&wbptterms=description&gpssearch=Sachin+T&gpslimit=10",
+                            getCallback);
+                }
+                else{
+                    new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            searchResultModel=new SearchResultModel();
+                            List<Page> pageList=DatabaseHelper.getInstance(getApplicationContext())
+                                    .getDb().pageDAO().getAllPagesBySearchQuery(searchCriteria);
+                            searchResultModel.setPageList(pageList);
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    adapter.updatePages(searchResultModel.getPageList());
+                                }
+                            });
+                        }
+                    }).start();
+                }
                 srlWikiSearch.setRefreshing(false);
             }
         });

@@ -1,25 +1,26 @@
 package assignments.rm.wikisearch;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import assignments.rm.wikisearch.model.Page;
 
 public class SearchResultModel {
-    private ArrayList<Page> pageList;
+    private List<Page> pageList;
 
     public SearchResultModel(ArrayList<Page> pageList) {
         this.pageList = pageList;
     }
 
     public SearchResultModel() {
-        this.pageList=new ArrayList<Page>();
+        this.pageList=new ArrayList<>();
     }
 
-    public ArrayList<Page> getPageList() {
+    public List<Page> getPageList() {
         return pageList;
     }
 
-    public void setPageList(ArrayList<Page> pageList) {
+    public void setPageList(List<Page> pageList) {
         this.pageList = pageList;
     }
 }

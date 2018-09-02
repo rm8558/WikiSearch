@@ -1,12 +1,10 @@
 package assignments.rm.wikisearch.ui.adapter;
 
-import android.app.Activity;
 import android.content.Context;
 import android.net.Uri;
 import android.support.annotation.NonNull;
 import android.support.v7.widget.RecyclerView;
 import android.text.TextUtils;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -16,6 +14,7 @@ import android.widget.TextView;
 import com.bumptech.glide.Glide;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import assignments.rm.wikisearch.R;
 import assignments.rm.wikisearch.model.Page;
@@ -25,7 +24,7 @@ import butterknife.ButterKnife;
 
 public class SearchItemAdapter extends RecyclerView.Adapter<SearchItemAdapter.SearchItemViewHolder> {
 
-    private ArrayList<Page> pageList;
+    private List<Page> pageList;
     private Context context;
 
     public SearchItemAdapter(ArrayList<Page> pageList,
@@ -34,7 +33,7 @@ public class SearchItemAdapter extends RecyclerView.Adapter<SearchItemAdapter.Se
         this.context = context;
     }
 
-    public void updatePages(ArrayList<Page> pageList){
+    public void updatePages(List<Page> pageList){
         this.pageList=pageList;
         notifyDataSetChanged();
     }
@@ -83,6 +82,9 @@ public class SearchItemAdapter extends RecyclerView.Adapter<SearchItemAdapter.Se
                     Glide.with(context)
                             .load(Uri.parse(page.getThumbnailURL()))
                             .into(ivSearchThumbnail);
+                }
+                else{
+                    ivSearchThumbnail.setImageDrawable(null);
                 }
             }catch (Exception e){
                 LogTracker.trackException(SearchItemAdapter.class,e);

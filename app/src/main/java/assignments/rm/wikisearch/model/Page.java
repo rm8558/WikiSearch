@@ -1,17 +1,34 @@
 package assignments.rm.wikisearch.model;
 
+import android.arch.persistence.room.ColumnInfo;
+import android.arch.persistence.room.Entity;
+import android.arch.persistence.room.ForeignKey;
+import android.arch.persistence.room.PrimaryKey;
 import android.os.Parcel;
 import android.os.Parcelable;
 
+@Entity(primaryKeys = {"pageId","query_id"},foreignKeys = @ForeignKey(entity = SearchQuery.class,
+        parentColumns = "qId",
+        childColumns = "query_id"))
 public class Page implements Parcelable{
     private long pageId;
+    @ColumnInfo(name="ns")
     private int ns;
+    @ColumnInfo(name="title")
     private String title;
+    @ColumnInfo(name="index")
     private long index;
+    @ColumnInfo(name="thumbnail_url")
     private String thumbnailURL;
-    private int thumbnailHeight,
-            thumbnailWidth;
+    @ColumnInfo(name="thumbnail_height")
+    private int thumbnailHeight;
+    @ColumnInfo(name="thumbnail_width")
+    private int thumbnailWidth;
+    @ColumnInfo(name="description")
     private String description;
+
+    @ColumnInfo(name = "query_id")
+    private long queryId;
 
     @Override
     public void writeToParcel(Parcel dest, int flags) {
@@ -23,6 +40,7 @@ public class Page implements Parcelable{
         dest.writeInt(thumbnailHeight);
         dest.writeInt(thumbnailWidth);
         dest.writeString(description);
+        dest.writeLong(queryId);
     }
 
     public Page(Parcel in){
@@ -34,6 +52,7 @@ public class Page implements Parcelable{
         thumbnailHeight=in.readInt();
         thumbnailWidth=in.readInt();
         description=in.readString();
+        queryId=in.readLong();
     }
 
     private static final Creator<Page> CREATOR=new Creator<Page>() {
@@ -129,5 +148,13 @@ public class Page implements Parcelable{
     @Override
     public int describeContents() {
         return 0;
+    }
+
+    public long getQueryId() {
+        return queryId;
+    }
+
+    public void setQueryId(long queryId) {
+        this.queryId = queryId;
     }
 }
