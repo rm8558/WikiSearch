@@ -3,17 +3,24 @@ package assignments.rm.wikisearch.ui.activity;
 import android.app.SearchManager;
 import android.content.Context;
 import android.content.Intent;
+import android.database.MatrixCursor;
+import android.provider.BaseColumns;
+import android.support.v4.widget.SimpleCursorAdapter;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.SearchView;
+import android.support.v7.widget.Toolbar;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.widget.ArrayAdapter;
+import android.widget.CursorAdapter;
+import android.widget.ListView;
 import android.widget.Toast;
 
 import org.json.JSONArray;
@@ -45,10 +52,12 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
     SwipeRefreshLayout srlWikiSearch;
 
     SearchItemAdapter adapter;
+    SimpleCursorAdapter searchAdapter;
     NetworkHelper.HttpGetCallback getCallback;
 
     private SearchResultModel searchResultModel;
     private String searchCriteria;
+    private List<SearchQuery> searchQueries;
 
 
     @Override
@@ -212,6 +221,13 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
     }
 
     private void initViews(){
+        searchAdapter = new SimpleCursorAdapter(MainActivity.this,
+                android.R.layout.simple_list_item_1,
+                null,
+                new String[]{"searchCriteria"},
+                new int[]{android.R.id.text1},
+                CursorAdapter.FLAG_REGISTER_CONTENT_OBSERVER);
+
         ArrayList<Page> pageList=new ArrayList<Page>();
 
         if(adapter==null){
@@ -295,8 +311,57 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
         MenuItem mSearchmenuItem = menu.findItem(R.id.search);
         SearchView searchView = (SearchView) mSearchmenuItem.getActionView();
         searchView.setQueryHint(getString(R.string.app_hint));
-        searchView.setOnQueryTextListener(this );
+        searchView.setSuggestionsAdapter(searchAdapter);
+        searchView.setOnQueryTextListener(this);
         return true;
+    }
+
+
+
+    @Override
+    public boolean onPrepareOptionsMenu(Menu menu) {
+        MenuItem mSearchmenuItem = menu.findItem(R.id.search);
+        SearchView searchView = (SearchView) mSearchmenuItem.getActionView();
+        searchView.setQueryHint(getString(R.string.app_hint));
+        searchView.setSuggestionsAdapter(searchAdapter);
+        searchView.setOnQueryTextListener(this);
+        searchView.setOnSuggestionListener(new SearchView.OnSuggestionListener() {
+            @Override
+            public boolean onSuggestionSelect(int position) {
+                return true;
+            }
+
+            @Override
+            public boolean onSuggestionClick(int position) {
+                searchCriteria=searchQueries.get(position).getQuery();
+                getSearchData();
+                return true;
+            }
+        });
+
+        return super.onPrepareOptionsMenu(menu);
+    }
+
+    private void populateAdapter(final String query) {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                final MatrixCursor c = new MatrixCursor(new String[]{ BaseColumns._ID, "searchCriteria" });
+                searchQueries=DatabaseHelper.getInstance(getApplicationContext())
+                        .getDb().searchQueryDAO().getAllMatchingQueries("%"+query.toLowerCase()+"%");
+
+                for(int i=0;i<searchQueries.size();i++){
+                    c.addRow(new Object[] {i, searchQueries.get(i).getQuery()});
+                }
+
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        searchAdapter.changeCursor(c);
+                    }
+                });
+            }
+        }).start();
     }
 
     @Override
@@ -308,6 +373,7 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
 
     @Override
     public boolean onQueryTextChange(String newText) {
-        return false;
+        populateAdapter(newText);
+        return true;
     }
 }

@@ -15,6 +15,9 @@ public interface SearchQueryDAO {
     @Query("SELECT * FROM SearchQuery")
     List<SearchQuery> getAllQueries();
 
+    @Query("SELECT * FROM SearchQuery WHERE LOWER(`query`) like :criteria")
+    List<SearchQuery> getAllMatchingQueries(String criteria);
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     List<Long> insertAll(SearchQuery... searchQueries);
 
