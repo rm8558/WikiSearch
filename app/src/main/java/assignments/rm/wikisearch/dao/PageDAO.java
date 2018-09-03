@@ -18,6 +18,9 @@ public interface PageDAO {
     @Query("SELECT * FROM Page,SearchQuery WHERE Page.query_id=SearchQuery.qId AND SearchQuery.`query`=:searchQuery")
     List<Page> getAllPagesBySearchQuery(String searchQuery);
 
+    @Query("SELECT * FROM Page WHERE LOWER(title) like :searchQuery ")
+    List<Page> getAllPagesBySearchQueryOffline(String searchQuery);
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     List<Long> insertAll(Page... pages);
 
